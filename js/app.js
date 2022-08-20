@@ -78,8 +78,6 @@ class Player {
     this.minY = -50;
     this.maxY = 450;
     this.stepY = 82;
-    // this.currScore =
-    // this.highScore =
   }
 
   update(newX = this.currX, newY = this.currY) {
