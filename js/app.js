@@ -1,46 +1,105 @@
-// Enemies our player must avoid
-var Enemy = function() {
-    // Variables applied to each of our instances go here,
-    // we've provided one for you to get started
+const getRandomNumber = (min, max) =>
+  Math.floor(Math.random() * (max - min) + min);
 
-    // The image/sprite for our enemies, this uses
-    // a helper we've provided to easily load images
-    this.sprite = 'images/enemy-bug.png';
+const directions = ['left', 'right'];
+
+const getRandomDirection = () =>
+  directions[Math.floor(Math.random() * directions.length)];
+
+const canvas = {
+  width: 505,
+  height: 606,
 };
 
-// Update the enemy's position, required method for game
-// Parameter: dt, a time delta between ticks
-Enemy.prototype.update = function(dt) {
-    // You should multiply any movement by the dt parameter
-    // which will ensure the game runs at the same speed for
-    // all computers.
-};
+class Enemy {
+  constructor(startY, mult) {
+    this.width = 101;
+    this.height = 171;
+    this.direction = getRandomDirection();
+    this.sprite = `images/enemy-bug-${this.direction}.png`;
+    this.minX = -this.width;
+    this.maxX = canvas.width + this.width;
+    this.startX = this.direction === 'right' ? this.minX : this.maxX;
+    this.startY = startY;
+    this.currX = this.startX;
+    this.currY = this.startY;
+    this.mult = this.direction === 'right' ? mult : -mult;
+  }
+  update(dt) {
+    if (this.currX >= this.maxX) {
+      this.mult *= -1;
+      this.direction = 'left';
+      this.sprite = `images/enemy-bug-${this.direction}.png`;
+    } else if (this.currX <= this.minX) {
+      this.mult *= -1;
+      this.direction = 'right';
+      this.sprite = `images/enemy-bug-${this.direction}.png`;
+    }
+    this.currX = this.currX + dt * this.mult;
+  }
+  render() {
+    ctx.drawImage(Resources.get(this.sprite), this.currX, this.currY);
+  }
+}
 
-// Draw the enemy on the screen, required method for game
-Enemy.prototype.render = function() {
-    ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-};
+class Player {
+  constructor() {
+    this.sprite = 'images/char-boy.png';
+    this.width = 101;
+    this.height = 171;
+    this.startX = 203;
+    this.startY = 404;
+    this.currX = this.startX;
+    this.currY = this.startY;
+    this.minX = 0;
+    this.maxX = canvas.width;
+    this.stepX = this.width;
+    this.minY = -50;
+    this.maxY = 450;
+    this.stepY = 82;
+  }
 
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
+  update(newX = this.currX, newY = this.currY) {
+    (this.currX = newX), (this.currY = newY);
+  }
 
+  render() {
+    ctx.drawImage(Resources.get(this.sprite), this.currX, this.currY);
+  }
 
-// Now instantiate your objects.
-// Place all enemy objects in an array called allEnemies
-// Place the player object in a variable called player
+  handleInput(code) {
+    switch (code) {
+      case 'ArrowLeft':
+        if (this.currX - this.stepX <= this.minX) return;
+        this.currX -= this.stepX;
+        break;
+      case 'ArrowRight':
+        if (this.currX + this.stepX >= this.maxX) return;
+        this.currX += this.stepX;
+        break;
+      case 'ArrowUp':
+        if (this.currY - this.stepY <= this.minY) return;
+        this.currY -= this.stepY;
+        break;
+      case 'ArrowDown':
+        if (this.currY + this.stepY >= this.maxY) return;
+        this.currY += this.stepY;
+        break;
+      default:
+        break;
+    }
+    this.update(this.currX, this.currY);
+  }
+}
 
+const allEnemies = [
+  new Enemy(65, getRandomNumber(150, 300)),
+  new Enemy(150, getRandomNumber(150, 300)),
+  new Enemy(235, getRandomNumber(150, 300)),
+];
+const player = new Player();
 
-
-// This listens for key presses and sends the keys to your
-// Player.handleInput() method. You don't need to modify this.
-document.addEventListener('keyup', function(e) {
-    var allowedKeys = {
-        37: 'left',
-        38: 'up',
-        39: 'right',
-        40: 'down'
-    };
-
-    player.handleInput(allowedKeys[e.keyCode]);
+document.addEventListener('keyup', function (e) {
+  const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+  if (allowedKeys.includes(e.code)) player.handleInput(e.code);
 });
