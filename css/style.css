@@ -1,3 +1,25 @@
 body {
-    text-align: center;
+  text-align: center;
+}
+
+.scores_wrapper {
+  width: 505px;
+  margin: 0 auto;
+  padding-top: 30px;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  grid-template-rows: repeat(2, auto);
+  grid-template-areas:
+    'current-score high-score'
+    'info info';
+}
+
+.current_wrapper {
+  grid-area: current-score;
+}
+.high_wrapper {
+  grid-area: high-score;
+}
+.info_wrapper {
+  grid-area: info;
 }

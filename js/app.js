@@ -1,3 +1,9 @@
+let highScore = localStorage.getItem('highScore') ?? 0;
+let currentScore = 0;
+const highHolder = document.querySelector('.high');
+const currentHolder = document.querySelector('.current');
+const infoHolder = document.querySelector('.info');
+
 const getRandomNumber = (min, max) =>
   Math.floor(Math.random() * (max - min) + min);
 
@@ -6,7 +12,7 @@ const directions = ['left', 'right'];
 const getRandomDirection = () =>
   directions[Math.floor(Math.random() * directions.length)];
 
-const canvas = {
+canvas = {
   width: 505,
   height: 606,
 };
@@ -26,6 +32,21 @@ class Enemy {
     this.mult = this.direction === 'right' ? mult : -mult;
   }
   update(dt) {
+    if (
+      player.currX >= this.currX &&
+      player.currX <= this.currX + this.width &&
+      player.currY >= this.currY &&
+      player.currY <= this.currY + 85
+    ) {
+      infoHolder.innerText = `You lost`;
+      currentScore = 0;
+      currentHolder.innerText = `Current score: ${currentScore}`;
+      setTimeout(() => {
+        player.update(player.startX, player.startY);
+        infoHolder.innerText = `Let's go!`;
+      }, 1000);
+      player.update(player.startX, player.startY);
+    }
     if (this.currX >= this.maxX) {
       this.mult *= -1;
       this.direction = 'left';
@@ -57,6 +78,8 @@ class Player {
     this.minY = -50;
     this.maxY = 450;
     this.stepY = 82;
+    // this.currScore =
+    // this.highScore =
   }
 
   update(newX = this.currX, newY = this.currY) {
@@ -65,6 +88,10 @@ class Player {
 
   render() {
     ctx.drawImage(Resources.get(this.sprite), this.currX, this.currY);
+  }
+
+  getHighcore() {
+    return localStorage.getItem('highScore') || 0;
   }
 
   handleInput(code) {
@@ -89,6 +116,20 @@ class Player {
         break;
     }
     this.update(this.currX, this.currY);
+    if (this.currY === -6) {
+      infoHolder.innerText = `You won`;
+      currentScore += 1;
+      currentHolder.innerText = `Current score: ${currentScore}`;
+      setTimeout(() => {
+        player.update(this.startX, this.startY);
+        infoHolder.innerText = `Let's go!`;
+      }, 1000);
+      if (currentScore > highScore) {
+        highScore = currentScore;
+        localStorage.setItem('highScore', highScore);
+        highHolder.innerText = `High score: ${highScore}`;
+      }
+    }
   }
 }
 
@@ -102,4 +143,9 @@ const player = new Player();
 document.addEventListener('keyup', function (e) {
   const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
   if (allowedKeys.includes(e.code)) player.handleInput(e.code);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  currentHolder.innerText = `Current score: ${currentScore}`;
+  highHolder.innerText = `High score: ${highScore}`;
 });
