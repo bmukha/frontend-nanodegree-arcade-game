@@ -8,6 +8,7 @@ const env = {
   tilesCountX: 5,
   tilesCountY: 6,
   currentScore: 0,
+  isGameActive: true,
   highScoreHolder: document.querySelector('.high'),
   messageHolder: document.querySelector('.info'),
   welcomeMessage: "Let's go!",
@@ -15,7 +16,7 @@ const env = {
   loseMessage: 'You lose!',
   highScore: localStorage.getItem('highScore') ?? 0,
   currentScoreHolder: document.querySelector('.current'),
-  updateScore: function (message) {
+  updateGameInfo: function (message) {
     this.currentScoreHolder.innerText = `Current score: ${this.currentScore}`;
     this.highScoreHolder.innerText = `High score: ${this.highScore}`;
     this.messageHolder.innerText = `${message}`;
@@ -24,10 +25,17 @@ const env = {
     this.currentScore += 1;
     if (this.currentScore > this.highScore) {
       this.highScore = this.currentScore;
-      localStorage.setItem('highScore', this.highScore);
+      this.saveHighScore(this.highScore);
     }
   },
-  resetScore: function () {
+  saveHighScore: function (score) {
+    localStorage.setItem('highScore', score);
+  },
+  resetScore: function (resetHighScore = false) {
+    if (resetHighScore) {
+      this.highScore = 0;
+      this.saveHighScore();
+    }
     this.currentScore = 0;
   },
 };
@@ -41,25 +49,34 @@ const getRandomDirection = () => directions[Math.floor(Math.random() * direction
 class Player {
   constructor() {
     this.sprite = 'images/char-boy.png';
-    this.currX = env.tileWidth * 2;
-    this.currY = env.fieldMinY + env.tileHeight * 5;
+    this.startX = env.tileWidth * 2;
+    this.startY = env.fieldMinY + env.tileHeight * 5;
+    this.currX = this.startX;
+    this.currY = this.startY;
     this.resetDelay = 1000;
   }
 
   update(newX = this.currX, newY = this.currY) {
+    if (!env.isGameActive) {
+      return;
+    }
     (this.currX = newX), (this.currY = newY);
-    console.log(`x: ${this.currX}, y:${this.currY}`);
+    // console.log(`x: ${this.currX}, y:${this.currY}`);
   }
 
   reset() {
-    this.update(env.tileWidth * 2, env.tileHeight * 5);
+    this.update(this.startX, this.startY);
   }
 
   render() {
+    // eslint-disable-next-line no-undef
     ctx.drawImage(Resources.get(this.sprite), this.currX, this.currY);
   }
 
   handleInput(code) {
+    if (!env.isGameActive) {
+      return;
+    }
     switch (code) {
       case 'ArrowLeft':
         if (this.currX - env.tileWidth < env.fieldMinX) return;
@@ -81,30 +98,38 @@ class Player {
         break;
     }
     this.update(this.currX, this.currY);
-    if (this.currY === -6) {
+    if (this.currY === env.fieldMinY) {
+      env.isGameActive = false;
       env.incrementScore();
-      env.updateScore(env.winMessage);
+      env.updateGameInfo(env.winMessage);
       setTimeout(() => {
-        player.update(this.startX, this.startY);
-        env.updateScore(env.welcomeMessage);
+        env.isGameActive = true;
+        player.reset();
+        env.updateGameInfo(env.welcomeMessage);
       }, this.resetDelay);
     }
+    console.log(`x: ${this.currX}, y:${this.currY}`);
   }
 }
 
 const player = new Player();
 
 class Enemy {
-  constructor(startY, mult, player) {
+  constructor(startY, player) {
     this.direction = getRandomDirection();
     this.sprite = `images/enemy-bug-${this.direction}.png`;
     this.minX = -env.tileWidth;
-    this.maxX = env.width + env.tileWidth;
+    this.maxX = env.fieldMaxX + env.tileWidth;
     this.startX = this.direction === 'right' ? this.minX : this.maxX;
     this.startY = startY;
     this.currX = this.startX;
     this.currY = this.startY;
-    this.mult = this.direction === 'right' ? mult : -mult;
+    this.minSpeed = 150;
+    this.maxSpeed = 250;
+    this.mult =
+      this.direction === 'right'
+        ? getRandomNumber(this.minSpeed, this.maxSpeed)
+        : -getRandomNumber(this.minSpeed, this.maxSpeed);
     this.player = player;
   }
   checkCollision() {
@@ -112,21 +137,24 @@ class Enemy {
       this.player.currX >= this.currX &&
       this.player.currX <= this.currX + env.tileWidth &&
       this.player.currY >= this.currY &&
-      this.player.currY <= this.currY + 85
+      this.player.currY <= this.currY + env.tileHeight
     ) {
       return true;
     }
+    // console.log('no collision');
     return false;
   }
   update(dt) {
+    console.log(`x: ${this.currX}, y:${this.currY}`);
     if (this.checkCollision()) {
+      console.log('collision');
       env.resetScore();
-      env.updateScore(env.loseMessage);
+      env.updateGameInfo(env.loseMessage);
       setTimeout(() => {
-        this.player.updateScore(player.startX, player.startY);
-        env.updateScore(env.welcomeMessage);
+        this.player.updateGameInfo(player.startX, player.startY);
+        env.updateGameInfo(env.welcomeMessage);
       }, 1000);
-      this.player.updateScore(player.startX, player.startY);
+      this.player.update(player.startX, player.startY);
     }
     if (this.currX >= this.maxX) {
       this.mult *= -1;
@@ -140,14 +168,15 @@ class Enemy {
     this.currX = this.currX + dt * this.mult;
   }
   render() {
+    // eslint-disable-next-line no-undef
     ctx.drawImage(Resources.get(this.sprite), this.currX, this.currY);
   }
 }
 
 const allEnemies = [
-  new Enemy(env.tileHeight, getRandomNumber(env.minEnemySpeed, env.maxEnemySpeed), player),
-  new Enemy(env.tileHeight * 2, getRandomNumber(env.minEnemySpeed, env.maxEnemySpeed), player),
-  new Enemy(env.tileHeight * 3, getRandomNumber(env.minEnemySpeed, env.maxEnemySpeed), player),
+  new Enemy(env.tileHeight, player),
+  new Enemy(env.tileHeight * 2, player),
+  new Enemy(env.tileHeight * 3, player),
 ];
 
 document.addEventListener('keyup', function (e) {
@@ -155,9 +184,18 @@ document.addEventListener('keyup', function (e) {
   if (allowedKeys.includes(e.code)) player.handleInput(e.code);
 });
 
+const isItFriday13thToday = () => new Date().getDay() === 5 && new Date().getDate() === 13;
+
 document.addEventListener('DOMContentLoaded', () => {
-  env.updateScore(env.welcomeMessage);
-  console.log(player);
-  console.log(env);
-  allEnemies.forEach(enemy => console.log(enemy));
+  if (isItFriday13thToday()) {
+    env.highScore = 0;
+    env.saveHighScore(env.highScore);
+    env.updateGameInfo(`It's Friday 13th! Your High Score is now gone!`);
+  } else {
+    console.log(isItFriday13thToday());
+    env.updateGameInfo(env.welcomeMessage);
+    console.log(player);
+    console.log(env);
+    allEnemies.forEach(enemy => console.log(enemy));
+  }
 });

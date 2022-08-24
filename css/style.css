@@ -29,4 +29,5 @@ body {
 }
 .info_wrapper {
   grid-area: info;
+  margin-top: 10px;
 }
