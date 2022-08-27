@@ -5,14 +5,8 @@ class Environment {
     this.fieldMinX = 0;
     this.fieldMinY = -10;
     this.fieldMaxX = 505;
-    this.fieldMaxY = 405;
+    this.fieldMaxY = 415;
     this.isGameOn = true;
-  }
-  startGame() {
-    this.isGameOn = true;
-  }
-  stopGame() {
-    this.isGameOn = false;
   }
 }
 
@@ -44,11 +38,7 @@ class ScoreBoard {
   saveHighScore(score) {
     localStorage.setItem('highScore', score);
   }
-  resetScore(resetHighScore = false) {
-    if (resetHighScore) {
-      this.highScore = 0;
-      this.saveHighScore();
-    }
+  resetScore() {
     this.currentScore = 0;
   }
 }
@@ -79,11 +69,9 @@ class Player {
       return;
     }
     (this.currX = newX), (this.currY = newY);
-    // console.log(`x: ${this.currX}, y:${this.currY}`);
   }
 
   render() {
-    // eslint-disable-next-line no-undef
     ctx.drawImage(Resources.get(this.sprite), this.currX, this.currY);
   }
 
@@ -111,7 +99,6 @@ class Player {
       default:
         break;
     }
-    console.log(`x: ${this.currX}, y:${this.currY}`);
     this.update(this.currX, this.currY);
     if (this.currY === this.env.fieldMinY) {
       this.env.isGameOn = false;
@@ -123,18 +110,19 @@ class Player {
         this.scoreBoard.updateGameInfo(this.scoreBoard.welcomeMessage);
       }, this.resetDelay);
     }
-    // console.log(`x: ${this.currX}, y:${this.currY}`);
   }
 }
 
 const player = new Player(env, scoreBoard);
 
 class Enemy {
-  constructor(startY, player) {
+  constructor(startY, player, env, scoreBoard) {
+    this.scoreBoard = scoreBoard;
+    this.env = env;
     this.direction = getRandomDirection();
     this.sprite = `images/enemy-bug-${this.direction}.png`;
-    this.minX = -env.tileWidth;
-    this.maxX = env.fieldMaxX + env.tileWidth;
+    this.minX = -this.env.characterWidth;
+    this.maxX = this.env.fieldMaxX + this.env.characterWidth;
     this.startX = this.direction === 'right' ? this.minX : this.maxX;
     this.startY = startY;
     this.currX = this.startX;
@@ -148,29 +136,23 @@ class Enemy {
     this.player = player;
   }
   checkCollision() {
+    const mod = this.direction === 'right' ? 0 : 1;
     if (
-      this.player.currX >= this.currX &&
-      this.player.currX <= this.currX + env.tileWidth &&
-      this.player.currY >= this.currY &&
-      this.player.currY <= this.currY + env.characterHeight
+      this.player.currY === this.currY &&
+      this.player.currX + this.env.characterWidth * mod >= this.currX &&
+      this.player.currX + this.env.characterWidth * mod <= this.currX + this.env.characterWidth
     ) {
-      // console.log(`playerX: ${this.player.currX}`);
-      // console.log(`playerY: ${this.player.currY}`);
-      // console.log(`enemyX: ${this.currX}`);
-      // console.log(`enemyY: ${this.currY}`);
       return true;
     }
-    // console.log('no collision');
     return false;
   }
   update(dt) {
     if (this.checkCollision()) {
-      // console.log('collision');
-      env.resetScore();
-      env.updateGameInfo(env.loseMessage);
+      this.scoreBoard.resetScore();
+      this.scoreBoard.updateGameInfo(this.scoreBoard.loseMessage);
       setTimeout(() => {
         this.player.update(this.player.startX, this.player.startY);
-        env.updateGameInfo(env.welcomeMessage);
+        this.scoreBoard.updateGameInfo(this.scoreBoard.welcomeMessage);
       }, 1000);
       this.player.update(player.startX, player.startY);
     }
@@ -183,12 +165,9 @@ class Enemy {
       this.direction = 'right';
       this.sprite = `images/enemy-bug-${this.direction}.png`;
     }
-    // dt = parseInt(dt * 100);
     this.currX = this.currX + dt * this.mult;
-    // console.log(`x: ${this.currX}, y:${this.currY} dt:${dt}`);
   }
   render() {
-    // eslint-disable-next-line no-undef
     ctx.drawImage(Resources.get(this.sprite), this.currX, this.currY);
   }
 }
@@ -197,25 +176,20 @@ const firstEnemyY = env.fieldMinY + env.characterHeight;
 const secondEnemyY = env.fieldMinY + env.characterHeight * 2;
 const thirdEnemyY = env.fieldMinY + env.characterHeight * 3;
 
-const allEnemies = [new Enemy(firstEnemyY, player), new Enemy(secondEnemyY, player), new Enemy(thirdEnemyY, player)];
+const allEnemies = [
+  new Enemy(firstEnemyY, player, env, scoreBoard),
+  new Enemy(secondEnemyY, player, env, scoreBoard),
+  new Enemy(thirdEnemyY, player, env, scoreBoard),
+];
 
 document.addEventListener('keyup', function (e) {
   const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
   if (allowedKeys.includes(e.code)) player.handleInput(e.code);
 });
 
-const isItFriday13thToday = () => new Date().getDay() === 5 && new Date().getDate() === 13;
-
 document.addEventListener('DOMContentLoaded', () => {
-  if (isItFriday13thToday()) {
-    scoreBoard.highScore = 0;
-    scoreBoard.saveHighScore(env.highScore);
-    scoreBoard.updateGameInfo(`It's Friday 13th! Your High Score is now gone!`);
-  } else {
-    // console.log(isItFriday13thToday());
-    scoreBoard.updateGameInfo(scoreBoard.welcomeMessage);
-    console.log(player);
-    console.log(env);
-    allEnemies.forEach(enemy => console.log(enemy));
-  }
+  scoreBoard.updateGameInfo(scoreBoard.welcomeMessage);
+  console.log(player);
+  console.log(env);
+  allEnemies.forEach(enemy => console.log(enemy));
 });
