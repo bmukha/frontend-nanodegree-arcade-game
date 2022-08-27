@@ -7,10 +7,16 @@ class Environment {
     this.fieldMaxX = 505;
     this.fieldMaxY = 415;
     this.isGameOn = true;
+    this.directions = ['left', 'right'];
+  }
+  getRandomNumber(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
+  }
+
+  getRandomDirection() {
+    return this.directions[Math.floor(Math.random() * this.directions.length)];
   }
 }
-
-const env = new Environment();
 
 class ScoreBoard {
   constructor(highScoreHolder, messageHolder, currentScoreHolder) {
@@ -42,15 +48,6 @@ class ScoreBoard {
     this.currentScore = 0;
   }
 }
-
-const scoreBoard = new ScoreBoard('.high', '.message', '.current');
-console.log(scoreBoard);
-
-const getRandomNumber = (min, max) => Math.floor(Math.random() * (max - min) + min);
-
-const directions = ['left', 'right'];
-
-const getRandomDirection = () => directions[Math.floor(Math.random() * directions.length)];
 
 class Player {
   constructor(env, scoreBoard) {
@@ -106,20 +103,23 @@ class Player {
       this.scoreBoard.updateGameInfo(this.scoreBoard.winMessage);
       setTimeout(() => {
         this.env.isGameOn = true;
-        player.update(this.startX, this.startY);
         this.scoreBoard.updateGameInfo(this.scoreBoard.welcomeMessage);
+        this.update(this.startX, this.startY);
       }, this.resetDelay);
     }
   }
 }
 
+const env = new Environment();
+const scoreBoard = new ScoreBoard('.high', '.message', '.current');
 const player = new Player(env, scoreBoard);
 
 class Enemy {
   constructor(startY, player, env, scoreBoard) {
     this.scoreBoard = scoreBoard;
     this.env = env;
-    this.direction = getRandomDirection();
+    this.directions = ['left', 'right'];
+    this.direction = this.env.getRandomDirection();
     this.sprite = `images/enemy-bug-${this.direction}.png`;
     this.minX = -this.env.characterWidth;
     this.maxX = this.env.fieldMaxX + this.env.characterWidth;
@@ -131,8 +131,8 @@ class Enemy {
     this.maxSpeed = 250;
     this.mult =
       this.direction === 'right'
-        ? getRandomNumber(this.minSpeed, this.maxSpeed)
-        : -getRandomNumber(this.minSpeed, this.maxSpeed);
+        ? this.env.getRandomNumber(this.minSpeed, this.maxSpeed)
+        : -this.env.getRandomNumber(this.minSpeed, this.maxSpeed);
     this.player = player;
   }
   checkCollision() {
@@ -150,11 +150,10 @@ class Enemy {
     if (this.checkCollision()) {
       this.scoreBoard.resetScore();
       this.scoreBoard.updateGameInfo(this.scoreBoard.loseMessage);
+      this.player.update(this.player.startX, this.player.startY);
       setTimeout(() => {
-        this.player.update(this.player.startX, this.player.startY);
         this.scoreBoard.updateGameInfo(this.scoreBoard.welcomeMessage);
-      }, 1000);
-      this.player.update(player.startX, player.startY);
+      }, 500);
     }
     if (this.currX >= this.maxX) {
       this.mult *= -1;
