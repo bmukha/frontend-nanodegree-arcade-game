@@ -27,7 +27,11 @@ body {
 .high_wrapper {
   grid-area: high-score;
 }
-.info_wrapper {
+.message_wrapper {
   grid-area: info;
   margin-top: 10px;
+}
+
+canvas {
+  border: 3px solid black;
 }
