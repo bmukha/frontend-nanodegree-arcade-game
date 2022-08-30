@@ -31,7 +31,3 @@ body {
   grid-area: info;
   margin-top: 10px;
 }
-
-canvas {
-  border: 3px solid black;
-}
