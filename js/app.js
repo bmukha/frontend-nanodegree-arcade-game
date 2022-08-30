@@ -1,10 +1,11 @@
 class Environment {
   constructor() {
-    this.characterWidth = 101;
-    this.characterHeight = 83;
+    this.tileWidth = 101;
+    this.tileHeight = 83;
+    this.tilesInRow = 5;
     this.fieldMinX = 0;
     this.fieldMinY = -10;
-    this.fieldMaxX = 505;
+    this.fieldMaxX = this.tileWidth * this.tilesInRow;
     this.fieldMaxY = 415;
     this.isGameOn = true;
     this.directions = ['left', 'right'];
@@ -54,8 +55,8 @@ class Player {
     this.env = env;
     this.scoreBoard = scoreBoard;
     this.sprite = 'images/char-boy.png';
-    this.startX = this.env.characterWidth * 2;
-    this.startY = this.env.fieldMinY + this.env.characterHeight * 5;
+    this.startX = this.env.tileWidth * 2;
+    this.startY = this.env.fieldMinY + this.env.tileHeight * 5;
     this.currX = this.startX;
     this.currY = this.startY;
     this.resetDelay = 1000;
@@ -78,20 +79,20 @@ class Player {
     }
     switch (code) {
       case 'ArrowLeft':
-        if (this.currX - this.env.characterWidth < this.env.fieldMinX) return;
-        this.currX -= this.env.characterWidth;
+        if (this.currX - this.env.tileWidth < this.env.fieldMinX) return;
+        this.currX -= this.env.tileWidth;
         break;
       case 'ArrowRight':
-        if (this.currX + this.env.characterWidth >= this.env.fieldMaxX) return;
-        this.currX += this.env.characterWidth;
+        if (this.currX + this.env.tileWidth >= this.env.fieldMaxX) return;
+        this.currX += this.env.tileWidth;
         break;
       case 'ArrowUp':
-        if (this.currY - this.env.characterHeight < this.env.fieldMinY) return;
-        this.currY -= this.env.characterHeight;
+        if (this.currY - this.env.tileHeight < this.env.fieldMinY) return;
+        this.currY -= this.env.tileHeight;
         break;
       case 'ArrowDown':
-        if (this.currY + this.env.characterHeight >= this.env.fieldMaxY) return;
-        this.currY += this.env.characterHeight;
+        if (this.currY + this.env.tileHeight >= this.env.fieldMaxY) return;
+        this.currY += this.env.tileHeight;
         break;
       default:
         break;
@@ -117,14 +118,14 @@ class Enemy {
     this.directions = ['left', 'right'];
     this.direction = this.env.getRandomDirection();
     this.sprite = `images/enemy-bug-${this.direction}.png`;
-    this.minX = -this.env.characterWidth;
-    this.maxX = this.env.fieldMaxX + this.env.characterWidth;
+    this.minX = -this.env.tileWidth;
+    this.maxX = this.env.fieldMaxX + this.env.tileWidth;
     this.startX = this.direction === 'right' ? this.minX : this.maxX;
     this.startY = startY;
     this.currX = this.startX;
     this.currY = this.startY;
     this.minSpeed = 150;
-    this.maxSpeed = 250;
+    this.maxSpeed = 300;
     this.mult =
       this.direction === 'right'
         ? this.env.getRandomNumber(this.minSpeed, this.maxSpeed)
@@ -136,9 +137,9 @@ class Enemy {
       return false;
     }
     if (
-      (this.player.currX >= this.currX && this.player.currX <= this.currX + this.env.characterWidth) ||
-      (this.player.currX + this.env.characterWidth >= this.currX &&
-        this.player.currX + this.env.characterWidth <= this.currX + this.env.characterWidth)
+      (this.player.currX >= this.currX && this.player.currX <= this.currX + this.env.tileWidth) ||
+      (this.player.currX + this.env.tileWidth >= this.currX &&
+        this.player.currX + this.env.tileWidth <= this.currX + this.env.tileWidth)
     ) {
       return true;
     }
@@ -172,18 +173,18 @@ class Enemy {
 const env = new Environment();
 const scoreBoard = new ScoreBoard('.high', '.message', '.current');
 const player = new Player(env, scoreBoard);
-const firstEnemyY = env.fieldMinY + env.characterHeight;
-const secondEnemyY = env.fieldMinY + env.characterHeight * 2;
-const thirdEnemyY = env.fieldMinY + env.characterHeight * 3;
+const firstEnemyY = env.fieldMinY + env.tileHeight;
+const secondEnemyY = env.fieldMinY + env.tileHeight * 2;
+const thirdEnemyY = env.fieldMinY + env.tileHeight * 3;
 const allEnemies = [
   new Enemy(firstEnemyY, player, env, scoreBoard),
   new Enemy(secondEnemyY, player, env, scoreBoard),
   new Enemy(thirdEnemyY, player, env, scoreBoard),
 ];
 
-document.addEventListener('keyup', function (e) {
+document.addEventListener('keyup', function ({ code }) {
   const allowedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-  if (allowedKeys.includes(e.code)) player.handleInput(e.code);
+  if (allowedKeys.includes(code)) player.handleInput(code);
 });
 
 document.addEventListener('DOMContentLoaded', () => {
