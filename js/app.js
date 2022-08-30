@@ -110,10 +110,6 @@ class Player {
   }
 }
 
-const env = new Environment();
-const scoreBoard = new ScoreBoard('.high', '.message', '.current');
-const player = new Player(env, scoreBoard);
-
 class Enemy {
   constructor(startY, player, env, scoreBoard) {
     this.scoreBoard = scoreBoard;
@@ -136,11 +132,13 @@ class Enemy {
     this.player = player;
   }
   checkCollision() {
-    const mod = this.direction === 'right' ? 0 : 1;
+    if (this.player.currY !== this.currY) {
+      return false;
+    }
     if (
-      this.player.currY === this.currY &&
-      this.player.currX + this.env.characterWidth * mod >= this.currX &&
-      this.player.currX + this.env.characterWidth * mod <= this.currX + this.env.characterWidth
+      (this.player.currX >= this.currX && this.player.currX <= this.currX + this.env.characterWidth) ||
+      (this.player.currX + this.env.characterWidth >= this.currX &&
+        this.player.currX + this.env.characterWidth <= this.currX + this.env.characterWidth)
     ) {
       return true;
     }
@@ -171,10 +169,12 @@ class Enemy {
   }
 }
 
+const env = new Environment();
+const scoreBoard = new ScoreBoard('.high', '.message', '.current');
+const player = new Player(env, scoreBoard);
 const firstEnemyY = env.fieldMinY + env.characterHeight;
 const secondEnemyY = env.fieldMinY + env.characterHeight * 2;
 const thirdEnemyY = env.fieldMinY + env.characterHeight * 3;
-
 const allEnemies = [
   new Enemy(firstEnemyY, player, env, scoreBoard),
   new Enemy(secondEnemyY, player, env, scoreBoard),
