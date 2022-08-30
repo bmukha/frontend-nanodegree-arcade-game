@@ -188,7 +188,4 @@ document.addEventListener('keyup', function (e) {
 
 document.addEventListener('DOMContentLoaded', () => {
   scoreBoard.updateGameInfo(scoreBoard.welcomeMessage);
-  console.log(player);
-  console.log(env);
-  allEnemies.forEach(enemy => console.log(enemy));
 });
